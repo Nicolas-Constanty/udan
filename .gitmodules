@@ -1,0 +1,12 @@
+[submodule "ThirdParties/Loguru"]
+	path = ThirdParties/Loguru
+	url = https://github.com/emilk/loguru.git
+[submodule "ThirdParties/SpdLog"]
+	path = ThirdParties/SpdLog
+	url = https://github.com/gabime/spdlog.git
+[submodule "ThirdParties/Clipp"]
+	path = ThirdParties/Clipp
+	url = https://github.com/muellan/clipp.git
+[submodule "ThirdParties/tomlplusplus"]
+	path = ThirdParties/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git

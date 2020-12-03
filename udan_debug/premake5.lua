@@ -1,17 +1,20 @@
 -- premake5.lua
 project "udan_debug"
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
     cppdialect "C++17"
     staticruntime "off"
 
-    pchheader "pch.h"
-    pchsource "src/pch.cpp"
+    pchheader "debugpch.h"
+    pchsource "src/debugpch.cpp"
 
     files {
         "src/**.cpp",
-        "includes/**.h"
+        "include/udan/debug/**.h"
     }
 
-    includedirs { "includes" }
+    includedirs { 
+        "include/udan/debug",
+        "../ThirdParties/SpdLog/include" -- string formating python like syntax
+     }
     

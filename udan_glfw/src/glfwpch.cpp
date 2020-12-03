@@ -1,5 +1,5 @@
-// pch.cpp: source file corresponding to the pre-compiled header
+// glfwpch.cpp: source file corresponding to the pre-compiled header
 
-#include "pch.h"
+#include "glfwpch.h"
 
 // When you are using pre-compiled headers, this source file is necessary for compilation to succeed.

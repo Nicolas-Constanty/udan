@@ -5,13 +5,13 @@ project "udan_glfw"
     cppdialect "C++17"
     staticruntime "off"
 
-    pchheader "pch.h"
-    pchsource "src/pch.cpp"
+    pchheader "glfwpch.h"
+    pchsource "src/glfwpch.cpp"
 
     files {
         "src/**.cpp",
-        "includes/**.h"
+        "include/udan/glfw/**.h"
     }
 
-    includedirs { "includes" }
+    includedirs { "include/udan/glfw" }
     
