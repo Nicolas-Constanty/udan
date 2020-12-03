@@ -143,7 +143,7 @@ namespace udan::core
 		{
 			LOG_FATAL(static_cast<std::string>(err.description()));
 		}
-		LOG_INFO("Engine config successfully loaded.");
+		LOG_INFO("Udan v{} - Config successfully loaded.", "0.1");
 	}
 }
 
