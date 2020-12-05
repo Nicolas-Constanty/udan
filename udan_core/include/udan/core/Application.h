@@ -10,7 +10,7 @@ namespace udan::core
 	class Application
 	{
 	public:
-		Application(int argv, char* argc[]);
+		Application(int argc, char* argv[]);
 		void Run();
 		void SetFramerate(uint16_t framerate);
 
