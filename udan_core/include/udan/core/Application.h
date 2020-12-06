@@ -8,8 +8,16 @@
 
 namespace udan::core
 {
+#if ENTITY_CAPACITY > 4294967295
+	typedef uint64_t Entity;
+#elif ENTITY_CAPACITY > 65535
 	typedef uint32_t Entity;
-	extern const Entity ENTITY_CAPACITY;
+#elif ENTITY_CAPACITY > 254
+	typedef uint16_t Entity;
+#else
+	typedef uint8_t Entity;
+#endif
+	
 	class Application
 	{
 	public:

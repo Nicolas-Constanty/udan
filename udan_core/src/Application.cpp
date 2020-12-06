@@ -28,13 +28,13 @@ namespace udan::core
 		while (true)
 		{
 			int count = 0;
-			const auto entities = m_entityManager.GetEntities();
-			for (const auto &entity : entities)
-			{
-				//int i = entity * entity;
-				//LOG_DEBUG("{}", entity);
-				count++;
-			}
+			//const auto entities = m_entityManager.GetEntities();
+			//for (const auto &entity : entities)
+			//{
+			//	//int i = entity * entity;
+			//	//LOG_DEBUG("{}", entity);
+			//	count++;
+			//}
 			const float deltaTime = m_clock->Tick();
 			time += deltaTime;
 			fps++;
