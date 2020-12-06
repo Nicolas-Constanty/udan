@@ -13,11 +13,12 @@ project "udan_core"
         "include/udan/core/**.h"
     }
 
-    -- links { "udan_debug" }
+    links { "udan_ecs" }
 
     includedirs {
         "include/udan/core",
         "../udan_debug/include",
+        "../udan_ecs/include",
         "../ThirdParties/Clipp/include", -- Arg parser
         "../ThirdParties/tomlplusplus/include", -- Toml parser
         "../ThirdParties/SpdLog/include"

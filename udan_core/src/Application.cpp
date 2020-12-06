@@ -13,7 +13,7 @@
 
 namespace udan::core
 {
-	Application::Application(int argc, char* argv[])
+	Application::Application(int argc, char* argv[]) : m_entityManager(ENTITY_CAPACITY)
 	{
 		debug::Logger::init();
 		udan::core::createConfig(argc, argv, &m_config);
@@ -27,11 +27,20 @@ namespace udan::core
 		uint32_t fps = 0;
 		while (true)
 		{
+			int count = 0;
+			const auto entities = m_entityManager.GetEntities();
+			for (const auto &entity : entities)
+			{
+				//int i = entity * entity;
+				//LOG_DEBUG("{}", entity);
+				count++;
+			}
 			const float deltaTime = m_clock->Tick();
 			time += deltaTime;
 			fps++;
 			if (time >= 1.f)
 			{
+				LOG_DEBUG("Entity Count : {}", count);
 				LOG_TRACE("FPS ({}) - Delta time: {}", fps, deltaTime);
 				fps = 0;
 				time = 0.f;
@@ -46,5 +55,10 @@ namespace udan::core
 			m_clock = std::make_unique<GameClock>(m_config.app.framerate);
 		else
 			m_clock = std::make_unique<UnlimitedClock>();
+	}
+
+	ecs::EntityManager<Entity> *Application::GetEntityManager()
+	{
+		return &m_entityManager;
 	}
 }

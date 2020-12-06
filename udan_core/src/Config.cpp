@@ -41,8 +41,8 @@ namespace udan::core
 			setupFromConfigFile(configPath, config);
 		}
 		
-		int verbosity;
-		double gametime;
+		int verbosity = static_cast<int>(config->app.verbosity);
+		double gametime = config->app.game_time.unwrap();
         const auto cli = (
 			clipp::option("-v", "--verbosity") & clipp::integer("verbosity level(0 to 6)", verbosity),
 			clipp::option("-f", "--framerate") & clipp::number("target framerate", config->app.framerate),

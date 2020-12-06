@@ -25,6 +25,8 @@ namespace udan::core
 	{
 		double currentTime = GetCurrentTimeSeconds();
 		double deltaTime = currentTime - m_time;
+		//if (deltaTime > 1)
+		//	deltaTime = m_targetDelta;
 		double waitTime = m_targetDelta - deltaTime;
 		const double targetTime = currentTime + waitTime;
 		// Adjust to fixed framerate
