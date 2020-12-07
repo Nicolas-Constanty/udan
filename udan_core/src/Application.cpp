@@ -13,9 +13,15 @@
 
 namespace udan::core
 {
+	Application  *Application::m_instance = nullptr;
 	Application::Application(int argc, char* argv[]) : m_entityManager(ENTITY_CAPACITY)
 	{
-		debug::Logger::init();
+		if (m_instance != nullptr)
+		{
+			delete this;
+		}
+		m_instance = this;
+		//debug::Logger::init();
 		udan::core::createConfig(argc, argv, &m_config);
 		debug::Logger::Instance()->set_level(static_cast<spdlog::level::level_enum>(m_config.app.verbosity));
 		SetFramerate(m_config.app.framerate);

@@ -27,9 +27,12 @@ namespace udan::core
 		void Run();
 		void SetFramerate(uint16_t framerate);
 		ecs::EntityManager<Entity> *GetEntityManager();
+		
 	private:
 		std::unique_ptr<IClock> m_clock;
 		Config m_config;
 		udan::ecs::EntityManager<Entity> m_entityManager;
+		//static udan::ecs::World<Entity> m_world;
+		static Application *m_instance;
 	};
 }

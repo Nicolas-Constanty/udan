@@ -7,6 +7,8 @@
 
 namespace udan::ecs
 {
+	//template<typename T1>
+	//class World;
 	template<typename T>
 	class EntityManager
 	{
@@ -15,6 +17,9 @@ namespace udan::ecs
 		explicit EntityManager(T entityCapacity) :
 		m_entityPos(entityCapacity, entityCapacity-1)
 		{
+			//if (m_instance != nullptr)
+			//	LOG_FATAL("Cannot have two instances of EntityManager");
+			//m_instance = this;
 			m_entities.reserve(entityCapacity);
 			m_noEntity = entityCapacity - 1;
 		}
@@ -86,6 +91,24 @@ namespace udan::ecs
 		{
 			return m_entities[idx];
 		}
+
+		//std::shared_ptr<T> CreateWorld(const std::string &name, size_t capacity)
+		//{
+		//	auto world = std::make_shared<World<T>>(capacity);
+		//	m_worlds.emplace(name, world);
+		//	return world;
+		//}
+
+		//std::shared_ptr<T> GetWorld(const std::string &name)
+		//{
+		//	return m_worlds[name];
+		//}
+
+		/*static EntityManager *Instance()
+		{
+			return m_instance;
+		}*/
+
 	private:
 		T GetNextEntityPos()
 		{
@@ -101,5 +124,10 @@ namespace udan::ecs
 		std::vector<T> m_entityPos;
 		std::vector<T> m_entities;
 		std::queue<T> m_freeEntities;
+
+		//std::unordered_map<std::string, std::shared_ptr<World<T>>> m_worlds;
+		/*std::vector<World> m_worlds;*/
+
+		//static EntityManager *m_instance;
 	};
 }

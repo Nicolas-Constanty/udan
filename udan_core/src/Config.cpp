@@ -13,6 +13,7 @@
 
 
 #include "udan/debug/Logger.h"
+#include "udan/utils/WindowsApi.h"
 
 namespace udan::core
 {
@@ -61,23 +62,6 @@ namespace udan::core
 			config->app.game_time = gametime;
 	}
 
-	std::string getErrorString()
-	{
-		DWORD errCode = GetLastError();
-		char* err;
-		if (!FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			nullptr,
-			errCode,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // default language
-			reinterpret_cast<LPTSTR>(&err),
-			0,
-			nullptr))
-		{
-			LOG_FATAL("Format message failed.");
-		}
-		return std::string(err);
-	}
-
 	BOOL FileExists(LPCTSTR szPath)
 	{
 		DWORD dwAttrib = GetFileAttributes(szPath);
@@ -99,7 +83,7 @@ namespace udan::core
 		wchar_t workingDirectory[MAX_PATH];
 		if (GetCurrentDirectoryW(MAX_PATH, workingDirectory) == 0)
 		{
-			LOG_FATAL(getErrorString());
+			LOG_FATAL(utils::GetErrorString());
 			return nullptr;
 		}
 		return std::wstring(workingDirectory);

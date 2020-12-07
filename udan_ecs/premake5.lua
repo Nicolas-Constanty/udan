@@ -13,10 +13,14 @@ project "udan_ecs"
         "include/udan/ecs/**.h"
     }
 
-    links { "udan_debug" }
+    links { 
+        "udan_debug",
+        "udan_utils"
+    }
 
     includedirs {
         "include/udan/ecs",
+        "../udan_utils/include",
         "../udan_debug/include",
         "../ThirdParties/SpdLog/include"
     }
