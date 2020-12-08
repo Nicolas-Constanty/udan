@@ -6,7 +6,6 @@
 
 namespace udan::utils
 {
-	size_t ThreadPool::m_taskId = 1;
 	ThreadPool::ThreadPool(size_t capacity)
 	{
 		m_shouldRun = true;
@@ -28,6 +27,18 @@ namespace udan::utils
 		{
 			thread.join();
 		}
+	}
+
+	void ThreadPool::StopWhenQueueEmpty()
+	{
+		WaitUntilQueueEmpty();
+		Stop();
+	}
+
+	void ThreadPool::WaitUntilQueueEmpty()
+	{
+		std::unique_lock<std::mutex> lck(m_mtx);
+		m_queueEmpty.wait(lck, [this]() { return m_tasks.empty(); });
 	}
 
 	void ThreadPool::Interrupt()
@@ -55,8 +66,44 @@ namespace udan::utils
 	void ThreadPool::Schedule(ATask* task)
 	{
 		std::unique_lock<std::mutex> lck(m_mtx);
+		DependencyTask* dt = dynamic_cast<DependencyTask*>(task);
+		if (dt != nullptr && !dt->Dependencies().empty())
+		{
+			bool completed = true;
+			for (const auto& depId : dt->Dependencies())
+			{
+				if (m_completedTasks.find(depId) == m_completedTasks.end())
+				{
+					completed = false;
+				}
+			}
+			if (!completed)
+			{
+				m_awaintingTasks.push_back(dt);
+				return;
+			}
+		}
 #if DEBUG
-		m_tasks.push(std::make_unique<DebugTaskDecorator>(task, m_taskId++));
+		//LOG_DEBUG("Schedule task {}: ", task->GetId());
+		m_tasks.push(std::make_unique<DebugTaskDecorator>(task));
+#else
+		m_tasks.push(std::unique_ptr<ATask>(task));
+#endif	
+		m_cv.notify_one();
+	}
+
+	void ThreadPool::ResetTaskCount()
+	{
+		m_awaintingTasks.clear();
+		m_completedTasks.clear();
+		ATask::ResetId();
+	}
+
+	void ThreadPool::ScheduleCompletedDependency(ATask* task)
+	{
+#if DEBUG
+		//LOG_DEBUG("Schedule task {}: ", task->GetId());
+		m_tasks.push(std::make_unique<DebugTaskDecorator>(task));
 #else
 		m_tasks.push(std::unique_ptr<ATask>(task));
 #endif	
@@ -69,14 +116,41 @@ namespace udan::utils
 		while (m_shouldRun)
 		{
 			std::unique_lock<std::mutex> lck(m_mtx);
+			if (m_tasks.empty())
+			{
+				m_queueEmpty.notify_one();
+			}
 			m_cv.wait(lck, [this]()
 			{
 				return !m_tasks.empty() || !m_shouldRun;
 			});
 			if (!m_shouldRun)
 				break;
-			m_tasks.top()->Exec();
+			uint64_t taskId = 0;
+			{
+				const auto& task = m_tasks.top();
+				task->Exec();
+				taskId = task->GetId();
+			}
 			m_tasks.pop();
+			m_completedTasks.insert(taskId);
+			m_awaintingTasks.remove_if([this](DependencyTask* task)
+				{
+					bool completed = true;
+					for (const auto& depId : task->Dependencies())
+					{
+						if (m_completedTasks.find(depId) == m_completedTasks.end())
+						{
+							completed = false;
+							break;
+						}
+					}
+					if (completed)
+					{
+						ScheduleCompletedDependency(task);
+					}
+					return completed;
+				});
 		}
 		LOG_INFO("Exit thread {}", GetCurrentThreadId());
 	}

@@ -16,15 +16,16 @@ namespace udan::utils
 	class ATask
 	{
 	public:
-		explicit ATask(TaskPriority priority = TaskPriority::NORMAL);
+		explicit ATask(TaskPriority priority = TaskPriority::NORMAL, size_t task_id = 0);
 		virtual ~ATask();
 		virtual void Exec() = 0;
 		[[nodiscard]] TaskPriority GetPriority() const;
-
+		[[nodiscard]] uint64_t GetId() const;
+		static void ResetId();
 	private:
 		TaskPriority m_priority;
-
-
+		uint64_t m_id;
+		static uint64_t m_taskId;
 	};
 
 	inline bool operator<(const std::unique_ptr<ATask>& lhs, const std::unique_ptr <ATask>& rhs)
@@ -63,11 +64,12 @@ namespace udan::utils
 			TaskPriority priority = TaskPriority::NORMAL);
 		~DependencyTask()  override;
 		void Exec() override;
+		[[nodiscard]] const std::vector<uint64_t> &Dependencies() const;
 
 	private:
-		void WaitForDependencies();
+		//void WaitForDependencies();
 
-		std::vector<DependencyTask*> m_dependencies;
+		std::vector<uint64_t> m_dependencies;
 		std::condition_variable m_cv;
 		std::mutex m_mtx;
 	};
@@ -75,12 +77,12 @@ namespace udan::utils
 	class DebugTaskDecorator : public ATask
 	{
 	public:
-		explicit DebugTaskDecorator(ATask* task, size_t id);
+		explicit DebugTaskDecorator(ATask* task);
 		~DebugTaskDecorator() override;
 		void Exec() override;
 
 	private:
 		std::unique_ptr<ATask> m_task;
-		size_t m_id;
+		
 	};
 }
