@@ -49,7 +49,6 @@ namespace udan::utils
 	private:
 		std::function<void()> m_task;
 		bool m_completed;
-
 	};
 
 	/// <summary>
@@ -63,15 +62,10 @@ namespace udan::utils
 			const std::vector<DependencyTask*>& tasks = {},
 			TaskPriority priority = TaskPriority::NORMAL);
 		~DependencyTask()  override;
-		void Exec() override;
 		[[nodiscard]] const std::vector<uint64_t> &Dependencies() const;
 
 	private:
-		//void WaitForDependencies();
-
 		std::vector<uint64_t> m_dependencies;
-		std::condition_variable m_cv;
-		std::mutex m_mtx;
 	};
 
 	class DebugTaskDecorator : public ATask
@@ -83,6 +77,5 @@ namespace udan::utils
 
 	private:
 		std::unique_ptr<ATask> m_task;
-		
 	};
 }

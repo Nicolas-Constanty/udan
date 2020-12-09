@@ -14,7 +14,6 @@ namespace udan::core
 		bool silent;
 		Option<double> game_time;
 		Option<std::string> log_dir;
-		
 	};
 
 	struct RendererConfig

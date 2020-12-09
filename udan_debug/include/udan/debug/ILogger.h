@@ -41,7 +41,6 @@ namespace udan
 			/// </summary>
 			/// <param name="log_dir"></param>
 			virtual void set_log_dir(const std::wstring& log_dir) noexcept = 0;
-
 		};
 	}
 }

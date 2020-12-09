@@ -66,31 +66,9 @@ namespace udan::utils
 
 	DependencyTask::~DependencyTask()
 	{
+		m_dependencies.clear();
 	}
-
-	//void DependencyTask::WaitForDependencies()
-	//{
-	//	if (!m_dependencies.empty())
-	//	{
-	//		for (const auto& dependency : m_dependencies)
-	//		{
-	//			std::unique_lock<std::mutex> lck(dependency->m_mtx);
-	//			while (!dependency->Completed())
-	//			{
-	//				dependency->m_cv.wait(lck);
-	//			}
-	//		}
-	//	}
-	//}
-
-	void DependencyTask::Exec()
-	{
-		//WaitForDependencies();
-		//std::unique_lock<std::mutex> lck(m_mtx);
-		Task::Exec();
-		//m_cv.notify_all();
-	}
-
+	
 	const std::vector<uint64_t> &DependencyTask::Dependencies() const
 	{
 		return m_dependencies;
@@ -109,6 +87,5 @@ namespace udan::utils
 		LOG_DEBUG("Starting task {}", m_task->GetId());
 		m_task->Exec();
 		LOG_DEBUG("Task {} has been executed", m_task->GetId());
-		
 	}
 }
