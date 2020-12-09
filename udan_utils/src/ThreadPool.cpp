@@ -1,9 +1,7 @@
 ﻿#include "utilspch.h"
 #include "ThreadPool.h"
 
-
-#include "CriticalSectionLock.h"
-#include "WindowsApi.h"
+#include "ScopeLock.h"
 #include "udan/debug/Logger.h"
 
 namespace udan::utils
@@ -22,7 +20,7 @@ namespace udan::utils
 	void ThreadPool::Stop()
 	{
 		{
-			CriticalSectionLock lkc;
+			ScopeLock<decltype(m_mtx)> lck(m_mtx);
 			m_shouldRun = false;
 			m_cv.NotifyAll();
 		}
@@ -40,13 +38,13 @@ namespace udan::utils
 
 	void ThreadPool::WaitUntilQueueEmpty()
 	{
-		CriticalSectionLock lck;
-		m_queueEmpty.Wait(lck, [this]() { return m_tasks.empty(); });
+		ScopeLock<decltype(m_mtx)> lck(m_mtx);
+		m_queueEmpty.Wait(m_mtx, [this]() { return m_tasks.empty(); });
 	}
 
 	void ThreadPool::Interrupt()
 	{
-		CriticalSectionLock lck;
+		ScopeLock<decltype(m_mtx)> lck(m_mtx);
 		m_shouldRun = false;
 		for (auto& thread : m_threads)
 		{
@@ -68,7 +66,7 @@ namespace udan::utils
 
 	void ThreadPool::Schedule(ATask* task)
 	{
-		std::unique_lock<std::mutex> lck(m_mtx);
+		ScopeLock<decltype(m_mtx)> lck(m_mtx);
 		DependencyTask* dt = dynamic_cast<DependencyTask*>(task);
 		if (dt != nullptr && !dt->Dependencies().empty())
 		{
@@ -118,12 +116,12 @@ namespace udan::utils
 		LOG_INFO("Start thread {}", GetCurrentThreadId());
 		while (m_shouldRun)
 		{
-			CriticalSectionLock lck;
+			ScopeLock<decltype(m_mtx)> lck(m_mtx);
 			if (m_tasks.empty())
 			{
 				m_queueEmpty.NotifyOne();
 			}
-			m_cv.Wait(lck, [this]()
+			m_cv.Wait(m_mtx, [this]()
 			{
 				return !m_tasks.empty() || !m_shouldRun;
 			});

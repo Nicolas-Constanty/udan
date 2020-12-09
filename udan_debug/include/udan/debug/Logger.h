@@ -112,7 +112,7 @@ namespace udan::debug
 #define LOG_INFO(...)
 #define LOG_WARN(...)
 #define LOG_ERR(...)
-#define LOG_FATAL(...) udan::debug::Logger::fatal(__FILE__, __LINE__,  __FUNCTION__, __VA_ARGS__)
+#define LOG_FATAL(...) udan::debug::Logger::fatal(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
 #endif

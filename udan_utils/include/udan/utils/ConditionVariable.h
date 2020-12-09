@@ -10,8 +10,10 @@ namespace udan::utils
 {
 	class ConditionVariable
 	{
+		CONDITION_VARIABLE m_conditionVariable;
+
 	public:
-		ConditionVariable()
+		explicit ConditionVariable()
 		{
 			InitializeConditionVariable(&m_conditionVariable);
 		}
@@ -41,11 +43,5 @@ namespace udan::utils
 		{
 			return &m_conditionVariable;
 		}
-		
-		~ConditionVariable()
-		{}
-
-	private:
-		CONDITION_VARIABLE m_conditionVariable;
 	};
 }

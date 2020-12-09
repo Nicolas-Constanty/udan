@@ -40,7 +40,7 @@ namespace udan::utils
 		std::vector<std::thread> m_threads;		
 		ConditionVariable m_cv;
 		ConditionVariable m_queueEmpty;
-		std::mutex m_mtx;
+		CriticalSectionLock m_mtx;
 		bool m_shouldRun;
 
 		std::priority_queue<std::unique_ptr<ATask>, std::vector<std::unique_ptr<ATask>>, std::greater<>> m_tasks;
