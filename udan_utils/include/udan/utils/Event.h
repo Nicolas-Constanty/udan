@@ -30,6 +30,6 @@ namespace udan::utils
 		}
 
 	private:
-		std::list<std::function<void(Args...)>> m_observers;
+		std::vector<std::function<void(Args...)>> m_observers;
 	};
 }

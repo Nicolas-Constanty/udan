@@ -1,8 +1,8 @@
 #pragma once
 
-#include <mutex>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
 #if PRINT_LINE
 #include <spdlog/fmt/fmt.h>
 #endif

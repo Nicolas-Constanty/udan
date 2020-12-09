@@ -1,11 +1,13 @@
 ﻿#pragma once
-#include <condition_variable>
+
 #include <map>
 #include <queue>
 #include <set>
 #include <thread>
 #include <vector>
 
+
+#include "ConditionVariable.h"
 #include "Task.h"
 
 namespace udan::utils
@@ -36,8 +38,8 @@ namespace udan::utils
 		void ScheduleCompletedDependency(ATask* task);
 		void Run();
 		std::vector<std::thread> m_threads;		
-		std::condition_variable m_cv;
-		std::condition_variable m_queueEmpty;
+		ConditionVariable m_cv;
+		ConditionVariable m_queueEmpty;
 		std::mutex m_mtx;
 		bool m_shouldRun;
 

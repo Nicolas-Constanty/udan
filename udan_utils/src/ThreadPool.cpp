@@ -1,6 +1,8 @@
 ﻿#include "utilspch.h"
 #include "ThreadPool.h"
 
+
+#include "CriticalSectionLock.h"
 #include "WindowsApi.h"
 #include "udan/debug/Logger.h"
 
@@ -19,10 +21,11 @@ namespace udan::utils
 
 	void ThreadPool::Stop()
 	{
-		std::unique_lock<std::mutex> lck(m_mtx);
-		m_shouldRun = false;
-		m_cv.notify_all();
-		lck.unlock();
+		{
+			CriticalSectionLock lkc;
+			m_shouldRun = false;
+			m_cv.NotifyAll();
+		}
 		for (auto& thread : m_threads)
 		{
 			thread.join();
@@ -37,13 +40,13 @@ namespace udan::utils
 
 	void ThreadPool::WaitUntilQueueEmpty()
 	{
-		std::unique_lock<std::mutex> lck(m_mtx);
-		m_queueEmpty.wait(lck, [this]() { return m_tasks.empty(); });
+		CriticalSectionLock lck;
+		m_queueEmpty.Wait(lck, [this]() { return m_tasks.empty(); });
 	}
 
 	void ThreadPool::Interrupt()
 	{
-		std::unique_lock<std::mutex> lck(m_mtx);
+		CriticalSectionLock lck;
 		m_shouldRun = false;
 		for (auto& thread : m_threads)
 		{
@@ -89,7 +92,7 @@ namespace udan::utils
 #else
 		m_tasks.push(std::unique_ptr<ATask>(task));
 #endif	
-		m_cv.notify_one();
+		m_cv.NotifyOne();
 	}
 
 	void ThreadPool::ResetTaskCount()
@@ -107,7 +110,7 @@ namespace udan::utils
 #else
 		m_tasks.push(std::unique_ptr<ATask>(task));
 #endif	
-		m_cv.notify_one();
+		m_cv.NotifyOne();
 	}
 
 	void ThreadPool::Run()
@@ -115,12 +118,12 @@ namespace udan::utils
 		LOG_INFO("Start thread {}", GetCurrentThreadId());
 		while (m_shouldRun)
 		{
-			std::unique_lock<std::mutex> lck(m_mtx);
+			CriticalSectionLock lck;
 			if (m_tasks.empty())
 			{
-				m_queueEmpty.notify_one();
+				m_queueEmpty.NotifyOne();
 			}
-			m_cv.wait(lck, [this]()
+			m_cv.Wait(lck, [this]()
 			{
 				return !m_tasks.empty() || !m_shouldRun;
 			});
