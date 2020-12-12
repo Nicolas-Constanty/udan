@@ -47,9 +47,6 @@ namespace udan::utils
 			m_completed = true;
 			onCompleted.Invoke();
 		}
-
-	protected:
-
 	private:
 		TaskPriority m_priority;
 		uint64_t m_id;

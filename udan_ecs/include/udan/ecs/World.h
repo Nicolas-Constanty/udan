@@ -111,15 +111,14 @@ namespace udan::ecs
 		template<typename ...Components>
 		void AddSystem(void(*func)(Components...))
 		{
-			auto view = new utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
-			const size_t min = view->GetSize();
+			auto view = utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
+			const size_t min = view.GetSize();
 			m_systems.push_back(
-				[func, view, min]()
+				[func{ std::move(func) }, view{ std::move(view) }, min]() mutable
 				{
-					auto& v = *view;
 					for (auto i = 0; i < min; ++i)
 					{
-						std::apply(func, v.Get(i));
+						std::apply(func, view.Get(i));
 					}
 				}
 			);
@@ -128,15 +127,14 @@ namespace udan::ecs
 		template<typename ...Components>
 		void AddSystemLambdas(std::function<void(Components...)> func)
 		{
-			auto view = new utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
-			const size_t min = view->GetSize();
+			auto view = utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
+			const size_t min = view.GetSize();
 			m_systems.push_back(
-				[func, view, min]()
+				[func { std::move(func) }, view{ std::move(view) }, min]() mutable
 				{
-					auto& v = *view;
 					for (auto i = 0; i < min; ++i)
 					{
-						std::apply(func, v.Get(i));
+						std::apply(func, view.Get(i));
 					}
 				}
 			);
@@ -145,22 +143,22 @@ namespace udan::ecs
 		template<typename ...Components>
 		void AddMtSystem(void(*func)(Components...))
 		{
-			auto view = new utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
-			const size_t min = view->GetSize();
+			auto view = utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
+			const size_t min = view.GetSize();
 			const size_t thread_count = m_threadPool.GetThreadCount();
 			const size_t index_per_thread = min / thread_count;
 			std::vector<std::shared_ptr<utils::ATask>> tasks;
 			tasks.reserve(thread_count);
 			for (auto i = 0; i < thread_count; ++i)
 			{
-				size_t start = i * index_per_thread;
+				const size_t start = i * index_per_thread;
 				size_t end = start + index_per_thread;
 				if (end > min || (i == thread_count - 1 && end < min))
 					end = min;
-				tasks.push_back(std::make_shared<SystemTask<decltype(func), decltype(*view)>>(start, end, func, *view));
+				tasks.push_back(std::make_shared<SystemTask<decltype(func), decltype(view)>>(start, end, func, view));
 			}
 			m_systems.push_back(
-				[this, tasks]()
+				[this, tasks{ std::move(tasks) }]()
 				{
 					for (const auto& task : tasks)
 					{
@@ -173,22 +171,22 @@ namespace udan::ecs
 		template<typename ...Components>
 		void AddMtSystemLambdas(std::function<void(Components...)> func)
 		{
-			auto view = new utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
-			const size_t min = view->GetSize();
+			auto view = utils::DataSetView<data_storage<std::decay_t<Components>>...>(GetComponentStorage<std::decay_t<Components>>() ...);
+			const size_t min = view.GetSize();
 			const size_t thread_count = m_threadPool.GetThreadCount();
 			const size_t index_per_thread = min / thread_count;
 			std::vector<std::shared_ptr<utils::ATask>> tasks;
 			tasks.reserve(thread_count);
 			for (auto i = 0; i < thread_count; ++i)
 			{
-				size_t start = i * index_per_thread;
+				const size_t start = i * index_per_thread;
 				size_t end = start + index_per_thread;
 				if (end > min || (i == thread_count - 1 && end < min))
 					end = min;
-				tasks.push_back(std::make_shared<SystemTask<decltype(func), decltype(*view)>>(start, end, func, *view));
+				tasks.push_back(std::make_shared<SystemTask<decltype(func), decltype(view)>>(start, end, func, view));
 			}
 			m_systems.push_back(
-				[this, tasks]()
+				[this, tasks {std::move(tasks)}]()
 				{
 					for (const auto& task : tasks)
 					{
@@ -232,9 +230,9 @@ namespace udan::ecs
 
 		void Update()
 		{
-			for (auto system: m_systems)
+			for (auto systemFunc: m_systems)
 			{
-				system();
+				systemFunc();
 			}
 		}
 
@@ -280,6 +278,5 @@ namespace udan::ecs
 		std::vector<std::unique_ptr<utils::SparseSet<Entity>>> m_dataPool;
 		utils::ThreadPool m_threadPool;
 		EntityManager<Entity> *m_entityManager;
-		
 	};
 }

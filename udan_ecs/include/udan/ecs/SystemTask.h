@@ -9,13 +9,12 @@ namespace udan::ecs
 		size_t m_start;
 		size_t m_end;
 		Func m_func;
-		View &m_view;
+		View m_view;
 	public:
-		explicit SystemTask(size_t start, size_t end, const Func &func, View &view) : ATask(), m_view(view)
+		explicit SystemTask(size_t start, size_t end, const Func &func, View& view) : ATask(), m_func(std::move(func)), m_view(std::move(view))
 		{
 			m_start = start;
 			m_end = end;
-			m_func = func;
 		}
 
 		void Exec() override
