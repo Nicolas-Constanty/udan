@@ -14,24 +14,24 @@ namespace udan::ecs
 	{
 	public:
 		//typedef  std::vector<T>::iterator iterator;
-		explicit EntityManager(T entityCapacity) :
+		explicit EntityManager(size_t entityCapacity) :
 		m_entityPos(entityCapacity, entityCapacity-1)
 		{
-			//if (m_instance != nullptr)
-			//	LOG_FATAL("Cannot have two instances of EntityManager");
-			//m_instance = this;
+			if (m_instance != nullptr)
+				LOG_FATAL("Cannot have two instances of EntityManager");
+			m_instance = this;
 			m_entities.reserve(entityCapacity);
 			m_noEntity = entityCapacity - 1;
 		}
 		T CreateEntity()
 		{
-			/*const T pos = m_entities.size();
-			const unsigned condition = m_entityPos[pos] == m_noEntity;
-			const unsigned mask = 0U - condition;
-			const T ent = (pos & mask) | (GetNextEntityPos() & ~mask);
-			m_entities.push_back(ent);
-			m_entityPos[ent] = pos;
-			return ent;*/
+			//const T pos = m_entities.size();
+			//const unsigned condition = m_entityPos[pos] == m_noEntity;
+			//const unsigned mask = 0U - condition;
+			//const T ent = (pos & mask) | (GetNextEntityPos() & ~mask);
+			//m_entities.push_back(ent);
+			//m_entityPos[ent] = pos;
+			//return ent;
 			T pos = m_entities.size();
 			T idx = pos;
 			if (m_entityPos[idx] != m_noEntity)
@@ -39,7 +39,7 @@ namespace udan::ecs
 				idx = m_freeEntities.front();
 				m_freeEntities.pop();
 			}
-			m_entities.push_back(idx);
+			m_entities.emplace_back(idx);
 			m_entityPos[idx] = pos;
 			return idx;
 		}
@@ -104,10 +104,10 @@ namespace udan::ecs
 		//	return m_worlds[name];
 		//}
 
-		/*static EntityManager *Instance()
+		static EntityManager *Instance()
 		{
 			return m_instance;
-		}*/
+		}
 
 	private:
 		T GetNextEntityPos()
@@ -128,6 +128,6 @@ namespace udan::ecs
 		//std::unordered_map<std::string, std::shared_ptr<World<T>>> m_worlds;
 		/*std::vector<World> m_worlds;*/
 
-		//static EntityManager *m_instance;
+		inline static EntityManager *m_instance = nullptr;
 	};
 }

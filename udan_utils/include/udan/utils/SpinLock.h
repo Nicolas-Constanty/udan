@@ -8,7 +8,7 @@ namespace udan::utils
 	class SpinLock
 	{
 	public:
-		SpinLock() : m_flag(ATOMIC_FLAG_INIT)
+		SpinLock()
 		{}
 
 		bool TryLock()

@@ -30,12 +30,13 @@ namespace udan::utils
 		#pragma message ("Cancel job immediatly, prefer Stop over Interrupt if you want to exit the threadpool safely")
 		void Interrupt();
 
-		void Schedule(ATask *task);
+		void Schedule(const std::shared_ptr<ATask>& task);
 		void ResetTaskCount();
+		size_t GetThreadCount() const;
 
 		//void ThreadPool::Print();
 	private:
-		void ScheduleCompletedDependency(ATask* task);
+		void ScheduleCompletedDependency(const std::shared_ptr<ATask> &task);
 		void Run();
 		std::vector<std::thread> m_threads;		
 		ConditionVariable m_cv;
@@ -43,8 +44,6 @@ namespace udan::utils
 		CriticalSectionLock m_mtx;
 		bool m_shouldRun;
 
-		std::priority_queue<std::unique_ptr<ATask>, std::vector<std::unique_ptr<ATask>>, std::greater<>> m_tasks;
-		std::list<DependencyTask *> m_awaintingTasks;
-		std::set<uint64_t> m_completedTasks;
+		std::priority_queue<std::shared_ptr<ATask>, std::vector<std::shared_ptr<ATask>>, std::greater<>> m_tasks;
 	};
 }

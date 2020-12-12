@@ -2,6 +2,7 @@
 #include "ThreadPool.h"
 
 #include "ScopeLock.h"
+#include "WindowsApi.h"
 #include "udan/debug/Logger.h"
 
 namespace udan::utils
@@ -64,49 +65,52 @@ namespace udan::utils
 		}
 	}*/
 
-	void ThreadPool::Schedule(ATask* task)
+	void ThreadPool::Schedule(const std::shared_ptr<ATask>& task)
 	{
 		ScopeLock<decltype(m_mtx)> lck(m_mtx);
-		DependencyTask* dt = dynamic_cast<DependencyTask*>(task);
+		auto dt = std::dynamic_pointer_cast<DependencyTask>(task);
 		if (dt != nullptr && !dt->Dependencies().empty())
 		{
-			bool completed = true;
-			for (const auto& depId : dt->Dependencies())
+			for (const auto& dependency : dt->Dependencies())
 			{
-				if (m_completedTasks.find(depId) == m_completedTasks.end())
+				if (!dependency->Completed())
 				{
-					completed = false;
+					dependency->onCompleted += [this, dt, dependency, task]()
+					{
+						if (dt->RemoveDependency(dependency))
+							ScheduleCompletedDependency(task);
+					};
+					break;
 				}
-			}
-			if (!completed)
-			{
-				m_awaintingTasks.push_back(dt);
-				return;
 			}
 		}
 #if DEBUG
 		//LOG_DEBUG("Schedule task {}: ", task->GetId());
-		m_tasks.push(std::make_unique<DebugTaskDecorator>(task));
+		m_tasks.push(std::make_shared<DebugTaskDecorator>(task));
 #else
-		m_tasks.push(std::unique_ptr<ATask>(task));
+		m_tasks.push(task);
 #endif	
 		m_cv.NotifyOne();
 	}
 
 	void ThreadPool::ResetTaskCount()
 	{
-		m_awaintingTasks.clear();
-		m_completedTasks.clear();
 		ATask::ResetId();
 	}
 
-	void ThreadPool::ScheduleCompletedDependency(ATask* task)
+	size_t ThreadPool::GetThreadCount() const
 	{
+		return m_threads.size();
+	}
+
+	void ThreadPool::ScheduleCompletedDependency(const std::shared_ptr<ATask>& task)
+	{
+		ScopeLock<decltype(m_mtx)> lck(m_mtx);
 #if DEBUG
 		//LOG_DEBUG("Schedule task {}: ", task->GetId());
-		m_tasks.push(std::make_unique<DebugTaskDecorator>(task));
+		m_tasks.push(std::make_shared<DebugTaskDecorator>(task));
 #else
-		m_tasks.push(std::unique_ptr<ATask>(task));
+		m_tasks.push(task);
 #endif	
 		m_cv.NotifyOne();
 	}
@@ -127,31 +131,8 @@ namespace udan::utils
 			});
 			if (!m_shouldRun)
 				break;
-			uint64_t taskId = 0;
-			{
-				const auto& task = m_tasks.top();
-				task->Exec();
-				taskId = task->GetId();
-			}
+			m_tasks.top()->Exec();
 			m_tasks.pop();
-			m_completedTasks.insert(taskId);
-			m_awaintingTasks.remove_if([this](DependencyTask* task)
-				{
-					bool completed = true;
-					for (const auto& depId : task->Dependencies())
-					{
-						if (m_completedTasks.find(depId) == m_completedTasks.end())
-						{
-							completed = false;
-							break;
-						}
-					}
-					if (completed)
-					{
-						ScheduleCompletedDependency(task);
-					}
-					return completed;
-				});
 		}
 		LOG_INFO("Exit thread {}", GetCurrentThreadId());
 	}

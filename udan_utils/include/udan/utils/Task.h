@@ -3,6 +3,10 @@
 #include <functional>
 #include <vector>
 
+
+#include "CriticalSectionLock.h"
+#include "Event.h"
+
 namespace udan::utils
 {
 	enum class TaskPriority : uint16_t
@@ -16,24 +20,50 @@ namespace udan::utils
 	class ATask
 	{
 	public:
+		Event<> onCompleted;
+
 		explicit ATask(TaskPriority priority = TaskPriority::NORMAL, size_t task_id = 0);
 		virtual ~ATask();
 		virtual void Exec() = 0;
-		[[nodiscard]] TaskPriority GetPriority() const;
-		[[nodiscard]] uint64_t GetId() const;
-		static void ResetId();
+		[[nodiscard]] TaskPriority GetPriority() const
+		{
+			return m_priority;
+		}
+		[[nodiscard]] uint64_t GetId() const
+		{
+			return m_id;
+		}
+		[[nodiscard]] bool Completed() const
+		{
+			return m_completed;
+		}
+		static void ResetId()
+		{
+			m_taskId = 0;
+		}
+
+		void Done()
+		{
+			m_completed = true;
+			onCompleted.Invoke();
+		}
+
+	protected:
+
 	private:
 		TaskPriority m_priority;
 		uint64_t m_id;
+		bool m_completed;
+
 		static uint64_t m_taskId;
 	};
 
-	inline bool operator<(const std::unique_ptr<ATask>& lhs, const std::unique_ptr <ATask>& rhs)
+	inline bool operator<(const std::shared_ptr<ATask>& lhs, const std::shared_ptr <ATask>& rhs)
 	{
 		return lhs->GetPriority() > rhs->GetPriority();
 	}
 
-	inline bool operator>(const std::unique_ptr <ATask>& lhs, const std::unique_ptr < ATask>& rhs)
+	inline bool operator>(const std::shared_ptr<ATask>& lhs, const std::shared_ptr < ATask>& rhs)
 	{
 		return lhs->GetPriority() < rhs->GetPriority();
 	}
@@ -44,13 +74,12 @@ namespace udan::utils
 		explicit Task(std::function<void()> task_function, TaskPriority priority = TaskPriority::NORMAL);
 		~Task() override;
 		void Exec() override;
-		[[nodiscard]] bool Completed() const;
 
 	private:
 		std::function<void()> m_task;
-		bool m_completed;
 	};
 
+	typedef std::vector<std::shared_ptr<ATask>> DependencyVector;
 	/// <summary>
 	/// This task can specify some other tasks dependencies
 	/// </summary>
@@ -59,23 +88,25 @@ namespace udan::utils
 	public:
 		explicit DependencyTask(
 			std::function<void()> task_function,
-			const std::vector<DependencyTask*>& tasks = {},
+			const DependencyVector &tasks = {},
 			TaskPriority priority = TaskPriority::NORMAL);
 		~DependencyTask()  override;
-		[[nodiscard]] const std::vector<uint64_t> &Dependencies() const;
+		bool RemoveDependency(const std::shared_ptr<ATask> &task);
+		[[nodiscard]] const std::list<std::shared_ptr<ATask>> &Dependencies() const;
 
 	private:
-		std::vector<uint64_t> m_dependencies;
+		std::list <std::shared_ptr<ATask>> m_dependencies;
+		CriticalSectionLock m_mtx;
 	};
 
 	class DebugTaskDecorator : public ATask
 	{
 	public:
-		explicit DebugTaskDecorator(ATask* task);
+		explicit DebugTaskDecorator(const std::shared_ptr<ATask> &task);
 		~DebugTaskDecorator() override;
 		void Exec() override;
 
 	private:
-		std::unique_ptr<ATask> m_task;
+		std::shared_ptr<ATask> m_task;
 	};
 }

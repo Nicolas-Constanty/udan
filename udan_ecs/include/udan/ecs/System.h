@@ -2,6 +2,8 @@
 
 namespace udan::ecs
 {
-	typedef void (*System)(...);
+	//template<typename ...Args>
+	//using System = std::function<void(Args&& ...args)>;
+	typedef std::function<void(...)> System;
 	
 }

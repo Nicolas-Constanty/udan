@@ -2,36 +2,25 @@
 
 #include "Task.h"
 
+
+#include "ScopeLock.h"
 #include "udan/debug/Logger.h"
 
 namespace udan::utils
 {
 	uint64_t ATask::m_taskId = 1;
-	ATask::ATask(TaskPriority priority, size_t task_id) : m_priority(priority), m_id(task_id == 0 ? m_taskId++ : task_id)
+	ATask::ATask(TaskPriority priority, size_t task_id) :
+	m_priority(priority),
+	m_id(task_id == 0 ? m_taskId++ : task_id),
+	m_completed(false)
 	{
 	}
 	
 	ATask::~ATask() = default;
 
-	inline TaskPriority ATask::GetPriority() const
-	{
-		return m_priority;
-	}
-
-	inline uint64_t ATask::GetId() const
-	{
-		return m_id;
-	}
-
-	void ATask::ResetId()
-	{
-		m_taskId = 0;
-	}
-
 	Task::Task(std::function<void()> task_function, TaskPriority priority) :
 	ATask(priority),
-	m_task(std::move(task_function)),
-	m_completed(false)
+	m_task(std::move(task_function))
 	{
 	}
 
@@ -42,25 +31,20 @@ namespace udan::utils
 	void Task::Exec()
 	{
 		m_task();
-		m_completed = true;
-	}
-
-	inline bool Task::Completed() const
-	{
-		return m_completed;
+		Done();
 	}
 
 	DependencyTask::DependencyTask(
 		std::function<void()> task_function,
-		const std::vector<DependencyTask*>& tasks,
+		const std::vector<std::shared_ptr<ATask>>& tasks,
 		TaskPriority priority) :
 	Task(std::move(task_function), priority)
 	{
 		for (const auto& task : tasks)
 		{
-			if (task == this)
+			if (task.get() == this)
 				continue;
-			m_dependencies.push_back(task->GetId());
+			m_dependencies.emplace_back(task);
 		}
 	}
 
@@ -68,13 +52,22 @@ namespace udan::utils
 	{
 		m_dependencies.clear();
 	}
-	
-	const std::vector<uint64_t> &DependencyTask::Dependencies() const
+
+	bool DependencyTask::RemoveDependency(const std::shared_ptr<ATask> &task)
+	{
+		ScopeLock<decltype(m_mtx)> lck(m_mtx);
+		m_dependencies.remove(task);
+		return m_dependencies.empty();
+	}
+
+	const std::list<std::shared_ptr<ATask>> &DependencyTask::Dependencies() const
 	{
 		return m_dependencies;
 	}
 
-	DebugTaskDecorator::DebugTaskDecorator(ATask* task) : ATask(task->GetPriority(), task->GetId()), m_task(std::unique_ptr<ATask>(task))
+	DebugTaskDecorator::DebugTaskDecorator(const std::shared_ptr<ATask>& task) :
+	ATask(task->GetPriority(), task->GetId()),
+	m_task(task)
 	{
 	}
 
