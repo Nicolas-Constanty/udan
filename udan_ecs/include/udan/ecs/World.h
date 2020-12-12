@@ -69,7 +69,7 @@ namespace udan::ecs
 		template<typename Component>
 		using data_storage = utils::DataSet<Entity, Component>;
 	public:
-		World(size_t capacity) : m_threadPool(3)
+		World(size_t capacity) : m_threadPool(2)
 		{
 			m_entityManager = EntityManager<Entity>::Instance();
 			m_entities.reserve(capacity);
@@ -164,6 +164,7 @@ namespace udan::ecs
 					{
 						m_threadPool.Schedule(task);
 					}
+					m_threadPool.WaitUntilQueueEmpty();
 				}
 			);
 		}
@@ -192,6 +193,7 @@ namespace udan::ecs
 					{
 						m_threadPool.Schedule(task);
 					}
+					m_threadPool.WaitUntilQueueEmpty();
 				}
 			);
 		}

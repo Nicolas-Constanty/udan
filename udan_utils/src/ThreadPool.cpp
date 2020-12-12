@@ -1,6 +1,9 @@
 ﻿#include "utilspch.h"
 #include "ThreadPool.h"
 
+#include <iostream>
+
+
 #include "ScopeLock.h"
 #include "WindowsApi.h"
 #include "udan/debug/Logger.h"
@@ -120,19 +123,24 @@ namespace udan::utils
 		LOG_INFO("Start thread {}", GetCurrentThreadId());
 		while (m_shouldRun)
 		{
-			ScopeLock<decltype(m_mtx)> lck(m_mtx);
-			if (m_tasks.empty())
+			std::shared_ptr<ATask> task;
 			{
-				m_queueEmpty.NotifyOne();
+				ScopeLock<decltype(m_mtx)> lck(m_mtx);
+				if (m_tasks.empty())
+				{
+					m_queueEmpty.NotifyOne();
+				}
+				m_cv.Wait(m_mtx, [this]()
+					{
+						return !m_tasks.empty() || !m_shouldRun;
+					});
+				if (!m_shouldRun)
+					break;
+				task = m_tasks.top();
+				m_tasks.pop();
 			}
-			m_cv.Wait(m_mtx, [this]()
-			{
-				return !m_tasks.empty() || !m_shouldRun;
-			});
-			if (!m_shouldRun)
-				break;
-			m_tasks.top()->Exec();
-			m_tasks.pop();
+			m_cv.NotifyOne();
+			task->Exec();
 		}
 		LOG_INFO("Exit thread {}", GetCurrentThreadId());
 	}
